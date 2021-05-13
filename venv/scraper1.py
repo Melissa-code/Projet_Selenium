@@ -41,7 +41,7 @@ def scrape(website=None, tag=None, class_=None):
     """Scrape a website with tag and class
 
     Args:
-        website (str): The url string
+        website (list): The url string
         tag (str): all the tags to scrape
         class_ (str) : the specific class_ to scrape
     """
