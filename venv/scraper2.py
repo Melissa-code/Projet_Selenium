@@ -1,11 +1,12 @@
 """Module scraper2 :
-1. Scrape the 4 pages of the Sephora website with Beautiful Soup and Selenium
-2. Print the result of the 12 download first products (make-up bases) of each page in a csv2 file
+1. Scrape the 4 pages of the Sephora website with Selenium and Beautiful Soup
+2. Print the result of the 210 or 211 make-up bases of each page in a csv2 file
 
 1. Inspect the elements of a website to know the tags and the classes (Chrome DevTools)
-2. Scrape data of the website with Beautifoul Soup:
+2. Scrape dynamic data of the website with Beautifoul Soup and Selenium :
     - open the browser by using the dynamic method : driver.get('url')
     - get the page_source by using the method : driver.page_source
+    - scroll the 4 pages
     - then pass it across BS which reads the content as Html or Xml file using its built-in XML or HTML parser
     - print the content without this elements: print(soup.text)
     - scrape all the 'a' tags and his class with: soup.find_all('a', class_='css-ix8km1')
@@ -19,7 +20,8 @@ Released under the MIT license
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.common.keys import Keys
 import pandas as pd
 from time import sleep
 
@@ -31,14 +33,23 @@ listeUrl = [
     "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
     "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
 ]
+driver = webdriver.Chrome(executable_path="/Applications/chromedriver")
 
 
-def write_in_csv():
+def scroll_page():
     """
-    Print the result in a csv file
+    Handle dynamic page content loading - using Selenium
     """
-    df = pd.DataFrame({'Fonds de teint : ': results})
-    df.to_csv('./csv/csv2.csv', index=False, encoding='utf-8')
+    # define the initial page height for 'while' loop
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    while True:
+        # scroll the page to the bottom
+        driver.execute_script("window.scrollBy(0, document.body.scrollHeight/3);")
+        sleep(5)
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        last_height = new_height
 
 
 def scrape(website=None, tag=None, class_=None):
@@ -51,8 +62,9 @@ def scrape(website=None, tag=None, class_=None):
     """
     if not (website and tag and class_) is None:
         try:
-            # Create a webdriver object
-            driver = webdriver.Chrome(executable_path="/Applications/chromedriver")
+            # maximisation du navigateur Web via le webdriver
+            driver.maximize_window()
+            sleep(5)
             for liste in listeUrl:
                 # Print each url of the Sephora website
                 print(liste)
@@ -61,6 +73,7 @@ def scrape(website=None, tag=None, class_=None):
                 while len(data) < 12:
                     # Open the browser and get the website
                     driver.get(liste)
+                    scroll_page()
                     page = driver.page_source
                     # Pass the website across BS
                     soup = BeautifulSoup(page, 'html.parser')
@@ -78,6 +91,14 @@ def scrape(website=None, tag=None, class_=None):
             print('Not successful', e)
     else:
         print('Please, enter a website')
+
+
+def write_in_csv():
+    """
+    Print the result in a csv file
+    """
+    df = pd.DataFrame({'Make-up bases : ': results})
+    df.to_csv('./csv/csv2.csv', index=False, encoding='utf-8')
 
 
 def main():
